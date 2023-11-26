@@ -33,6 +33,13 @@ def display_image(np_image):
     
     height = 300
     width = 400
+
+    # set orginal values for reset functions
+    original_image = np_image
+    original_hsv_image = cv2.cvtColor(original_image, cv2.COLOR_RGB2HSV)
+    original_h = original_hsv_image[:,:,0]
+    original_s = original_hsv_image[:,:,1]
+    original_v = original_hsv_image[:,:,2]
     
     # output image frame
     frame_output = [[sg.Graph(
@@ -44,53 +51,57 @@ def display_image(np_image):
         change_submits=True,
         drag_submits=True)]]
 
-    slider1 = [
+    hueSlider = [
         sg.Text(
         'H', 
         enable_events=True,
         key='-TEXT-',
         justification='left'),
         sg.Slider(
-        range=(0, 15), 
+        range=(0, 179), 
         default_value=0, 
         size=(40, 15),
         enable_events=True,
         orientation='horizontal', 
-        key='-H-')]
-    slider2 = [
+        key='-H-'),
+        sg.Button('Reset', key='Reset_H')]
+    saturationSlider = [
         sg.Text(
         'S', 
         enable_events=True,
         key='-TEXT-',
         justification='left'),
         sg.Slider(
-        range=(0, 15), 
+        range=(0, 255), 
         default_value=0, 
         size=(40, 15),
         enable_events=True,
         orientation='horizontal', 
-        key='-S-')]
-    slider3 = [
+        key='-S-'),
+        sg.Button('Reset',key='Reset_S')
+        ]
+    
+    valueSlider = [
         sg.Text(
         'V', 
         enable_events=True,
         key='-TEXT-',
         justification='left'),
         sg.Slider(
-        range=(0, 15), 
+        range=(0, 255), 
         default_value=0, 
         size=(40, 15),
         enable_events=True,
         orientation='horizontal', 
-        key='-V-')]
+        key='-V-'),
+        sg.Button('Reset', key='Reset_V')]
 
         
     # Define the layout
     layout = [
         [sg.Column(frame_output)],
-        # sliders to ajust hue, saturation and vibrency
         [sg.Button('Greyscale'), sg.Button('Histogram Equalization')],
-        [slider1, slider2, slider3],
+        [hueSlider, saturationSlider, valueSlider],
         [sg.Button('Exit')]
         ]
 
@@ -101,6 +112,11 @@ def display_image(np_image):
     # Event loop
     while True:
         event, values = window.read()
+        #if the reset buttons are pressed without any changes being made the program doesn't break
+        h = original_h
+        s = original_s
+        v = original_v
+
         if event == sg.WINDOW_CLOSED or event == 'Exit':
             break
 
@@ -120,21 +136,67 @@ def display_image(np_image):
             # preform histogram equalization
             rgb_image = histogramEqual(np_image)
             
-             # convert numpy array to data
+            # convert numpy array to data
             rgb_image_data = np_im_to_data(rgb_image)
 
             # display new output image
             window['-OUTPUT-'].draw_image(data=rgb_image_data, location=(0,height))
         
-        # third filter
-
-        # fourth filter
         
         #Slider events
+        if event == '-H-':
+            hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            h = int(values['-H-'])
+            hsv_image[:,:,0] = h # sets the hue channel to the input value
 
+            np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+            np_image_data = np_im_to_data(np_image)
+            window['-OUTPUT-'].draw_image(data=np_image_data, location=(0,height))
+
+        if event == 'Reset_H':
+            hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            hsv_image[:,:,0] = original_h # sets the hue channel to the original value
+
+            np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+            np_image_data = np_im_to_data(np_image)
+            window['-OUTPUT-'].draw_image(data=np_image_data, location=(0,height))
+        
+        if event == '-S-':
+            hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            s = int(values['-S-'])
+            hsv_image[:,:,1] = s # sets the saturation channel to the input value
+
+            np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+            np_image_data = np_im_to_data(np_image)
+            window['-OUTPUT-'].draw_image(data=np_image_data, location=(0,height))
+        
+        if event == 'Reset_S':
+            hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            hsv_image[:,:,1] = original_s # sets the saturation channel to the original value
+
+            np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+            np_image_data = np_im_to_data(np_image)
+            window['-OUTPUT-'].draw_image(data=np_image_data, location=(0,height))
+
+        if event == '-V-':
+            hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            v = int(values['-V-'])
+            hsv_image[:,:,2] += v # increases the saturation channel by the input value
+            
+            np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+            np_image_data = np_im_to_data(np_image)
+            window['-OUTPUT-'].draw_image(data=np_image_data, location=(0,height))
+        
+        if event == 'Reset_V':
+            hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            hsv_image[:,:,1] = s # sets the saturation value to userr given input
+            hsv_image[:,:,2] = original_v # sets the value channel to the original value
+
+            np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+            np_image_data = np_im_to_data(np_image)
+            window['-OUTPUT-'].draw_image(data=np_image_data, location=(0,height))
 
     window.close()
-
 
 
 def main():
