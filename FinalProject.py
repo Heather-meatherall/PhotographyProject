@@ -173,6 +173,7 @@ def display_image(np_image):
         if event == 'Reset_S':
             hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
             hsv_image[:,:,1] = original_s # sets the saturation channel to the original value
+            s = original_s
 
             np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
             np_image_data = np_im_to_data(np_image)
