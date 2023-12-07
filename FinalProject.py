@@ -9,6 +9,14 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')
 
+
+'''
+Title: np_im_to_data
+Author: Faisal Qureshi
+Date: December 2023
+Type: Source Code 
+Availability: Provided for lab 2 on September 2023 for CSCI 3240U 
+'''
 # this will to convert numpy image to PySimpleGUI-compatible data
 def np_im_to_data(im):
     array = np.array(im, dtype=np.uint8)
@@ -18,7 +26,14 @@ def np_im_to_data(im):
         data = output.getvalue()
     return data
 
-#  construct image histogram
+'''
+Title: construct_image_histogram
+Author: Faisal Qureshi
+Date: December 2023
+Type: Source Code 
+Availability: Provided for lab 2 on September 2023 for CSCI 3240U 
+'''
+# construct image histogram
 def construct_image_histogram(np_image):
     L = 256
     bins = np.arange(L+1)
@@ -40,7 +55,6 @@ def display_image(np_image):
     original_s = original_hsv_image[:,:,1]
     original_v = original_hsv_image[:,:,2]
     
-    
     # output image frame
     frame_output = [[sg.Graph(
         canvas_size=(width, height),
@@ -59,7 +73,7 @@ def display_image(np_image):
             key='-TEXT-H-',
             justification='left'),
         sg.Slider(
-            range=(-180, 180), 
+            range=(0, 180), 
             default_value=0, 
             size=(40, 15),
             enable_events=True,
@@ -73,7 +87,7 @@ def display_image(np_image):
             key='-TEXT-S-',
             justification='left'),
         sg.Slider(
-            range=(-100, 100), 
+            range=(0, 100), 
             default_value=0, 
             size=(40, 15),
             enable_events=True,
@@ -87,7 +101,7 @@ def display_image(np_image):
             key='-TEXT-V-',
             justification='left'),
         sg.Slider(
-            range=(-100, 100), 
+            range=(0, 100), 
             default_value=0, 
             size=(40, 15),
             enable_events=True,
@@ -107,13 +121,15 @@ def display_image(np_image):
     # Create the window
     window = sg.Window('Photo Editor', layout, finalize=True)    
     window['-OUTPUT-'].draw_image(data=image_data, location=(0, height))
+
+    # this makes sure that if the 'Reset_V' button is pressed without any changes being made the program doesn't break
+    h = original_h
+    s = original_s
         
     # this is the event loop
     while True:
         event, values = window.read()
  
-        # this makes sure that if the reset buttons are pressed without any changes being made the program doesn't break
-
         if event == sg.WINDOW_CLOSED or event == 'Exit':
             break
 
@@ -130,13 +146,13 @@ def display_image(np_image):
 
         # Histogram equalization
         if event == 'Histogram Equalization':
-            # this  performs histogram equalization
+            # this performs histogram equalization
             rgb_image = histogram_equalization(np_image)
             
             # convert numpy array to data
             rgb_image_data = np_im_to_data(rgb_image)
 
-            #  thi displays the  equalized image
+            # this displays the equalized image
             window['-OUTPUT-'].draw_image(data=rgb_image_data, location=(0, height))
 
         #  filter to apply the blur 
@@ -173,21 +189,25 @@ def display_image(np_image):
 
         # resets the hue value
         if event == 'Reset_H':
+            h = original_h # sets the hue value to original hue value
             np_image =  reset_image(np_image, 0, original_h)
             window['-OUTPUT-'].draw_image(data=np_im_to_data(np_image), location=(0,height))
         
         # resets the saturation value
         if event == 'Reset_S':
+            s = original_s # sets the saturation value to original saturation value
             np_image =  reset_image(np_image, 1, original_s)
             window['-OUTPUT-'].draw_image(data=np_im_to_data(np_image), location=(0,height))
         
         # resets the colour value
         if event == 'Reset_V':
             hsv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2HSV)
+            hsv_image[:,:,0] = h # sets the hue value to userr given input
             hsv_image[:,:,1] = s # sets the saturation value to userr given input
+            hsv_image[:,:,2] = original_v
             np_image =  cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
 
-            np_image =  reset_image(np_image, 2, original_v)
+            # np_image =  reset_image(np_image, 2, original_v)
             window['-OUTPUT-'].draw_image(data=np_im_to_data(np_image), location=(0,height))
 
         # this saaves the edited image
@@ -199,39 +219,13 @@ def display_image(np_image):
 
     window.close()
 
-def adjust_image(image, value, event):
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-
-    if event == 'H':
-        hsv_image[:,:,0] = value # sets the hue channel to the original value
-    elif event == 'S':
-        hsv_image[:, :, 1] = np.clip(hsv_image[:, :, 1] + value, 0, 255) # sets the saturation channel to the input value
-    elif event == 'V':
-       hsv_image[:, :, 2] = np.clip(hsv_image[:, :, 2] + value, 0, 255) # sets the saturation channel to the input value
-
-    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
-
-def reset_image(image, i, original):
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    hsv_image[:,:,i] = original # sets the saturation channel to the original value
-
-    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
-
-# this  function applies histogram equalization
-def histogram_equalization(image):
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    hsv_image[:, :, 2] = cv2.equalizeHist(hsv_image[:, :, 2])
-    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
-
-# a function to apply blur filter
-def apply_blur(image):
-    return cv2.GaussianBlur(image, (15, 15), 0)
-
-# a function to apply sharpness filter
-def apply_sharpness(image):
-    enhancer = ImageEnhance.Sharpness(Image.fromarray(image))
-    return np.array(enhancer.enhance(2.0))
-
+'''
+Title: main
+Author: Faisal Qureshi
+Date: December 2023
+Type: Source Code 
+Availability: Provided for lab 2 on September 2023 for CSCI 3240U 
+'''
 # the main function
 def main():
     parser = argparse.ArgumentParser(description='A simple photo editing application.')
@@ -263,6 +257,39 @@ def aspect_ratio(image, width):
 def greyscale(image):
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return cv2.cvtColor(grey, cv2.COLOR_GRAY2RGB)
+# this  function applies histogram equalization
+def histogram_equalization(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    hsv_image[:, :, 2] = cv2.equalizeHist(hsv_image[:, :, 2])
+    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+
+# a function to apply blur filter
+def apply_blur(image):
+    return cv2.GaussianBlur(image, (15, 15), 0)
+
+# a function to apply sharpness filter
+def apply_sharpness(image):
+    enhancer = ImageEnhance.Sharpness(Image.fromarray(image))
+    return np.array(enhancer.enhance(2.0))
+
+def adjust_image(image, value, event):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV) # converts image values into HSV
+
+    # adjusts the channel based on the event given
+    if event == 'H':
+        hsv_image[:,:,0] = value # sets the hue channel to the original value
+    elif event == 'S':
+        hsv_image[:, :, 1] = hsv_image[:,:,1] + value # add the input value to the saturation channel
+    elif event == 'V':
+       hsv_image[:, :, 2] = np.clip(hsv_image[:, :, 2] + value, 0, 255) # add the input value to the value channel
+    
+    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB) # returns the adjusted image converted back to RBG 
+
+def reset_image(image, c, original):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV) # converts image values into HSV
+    hsv_image[:,:,c] = original # sets the channel to the original value based on given channel value
+
+    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB) # returns the image converted back to RBG 
 
 if __name__ == '__main__':
     main()
