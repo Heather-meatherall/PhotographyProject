@@ -4,10 +4,11 @@ from PIL import Image, ImageEnhance
 import numpy as np
 import cv2
 from io import BytesIO
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
-import matplotlib
+# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+# import matplotlib.pyplot as plt
+import matplotlib  
 matplotlib.use('TkAgg')
+import os.path
 
 
 '''
@@ -47,13 +48,6 @@ def display_image(np_image):
     
     height = 300
     width = 400
-
-    # set orginal values for reset functions
-    original_image = np_image
-    original_hsv_image = cv2.cvtColor(original_image, cv2.COLOR_RGB2HSV)
-    original_h = original_hsv_image[:,:,0]
-    original_s = original_hsv_image[:,:,1]
-    original_v = original_hsv_image[:,:,2]
     
     # output image frame
     frame_output = [[sg.Graph(
@@ -111,6 +105,7 @@ def display_image(np_image):
 
     # this is the defined  layout
     layout = [
+        [sg.Input(size=(25, 1), key="-FILE-"), sg.FileBrowse(), sg.Button('Load Image')],
         [sg.Column(frame_output)],
         # buttons for different filters
         [sg.Button('Greyscale'), sg.Button('Histogram Equalization'), sg.Button('Blur'), sg.Button('Sharpness')],
@@ -121,10 +116,6 @@ def display_image(np_image):
     # Create the window
     window = sg.Window('Photo Editor', layout, finalize=True)    
     window['-OUTPUT-'].draw_image(data=image_data, location=(0, height))
-
-    # this makes sure that if the 'Reset_V' button is pressed without any changes being made the program doesn't break
-    h = original_h
-    s = original_s
         
     # this is the event loop
     while True:
@@ -132,6 +123,30 @@ def display_image(np_image):
  
         if event == sg.WINDOW_CLOSED or event == 'Exit':
             break
+        
+        # loads the image
+        if event == 'Load Image':
+            filename = values['-FILE-']
+            if os.path.exists(filename):
+                np_image = cv2.imread(filename)
+                np_image = cv2.cvtColor(np_image, cv2.COLOR_BGR2RGB)
+
+                dim = aspect_ratio(np_image, 400) # finds the aspect ratio dimentions for a certain width
+                np_image = cv2.resize(np_image, dim, interpolation=cv2.INTER_LINEAR)
+
+                # set orginal values for reset functions
+                original_image = np_image
+                original_hsv_image = cv2.cvtColor(original_image, cv2.COLOR_RGB2HSV)
+                original_h = original_hsv_image[:,:,0]
+                original_s = original_hsv_image[:,:,1]
+                original_v = original_hsv_image[:,:,2]
+
+                # this makes sure that if the 'Reset_V' button is pressed without any changes being made the program doesn't break
+                h = original_h
+                s = original_s
+
+                window['-OUTPUT-'].erase()
+                window['-OUTPUT-'].draw_image(data=np_im_to_data(np_image), location=(0, height))
 
         # convert the image to grayscale
         if event == 'Greyscale':
@@ -228,22 +243,8 @@ Availability: Provided for lab 2 on September 2023 for CSCI 3240U
 '''
 # the main function
 def main():
-    parser = argparse.ArgumentParser(description='A simple photo editing application.')
+    image = np.zeros((300,400,3))
 
-    parser.add_argument('file', action='store', help='Image file.')
-    args = parser.parse_args()
-
-    print(f'Loading {args.file} ... ', end='')
-    image = cv2.imread(args.file)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print(f'{image.shape}')
-
-    print(f'Resizing the image ...', end='')
-    dim = aspect_ratio(image, 400) 
-    image = cv2.resize(image, dim, interpolation=cv2.INTER_LINEAR)
-    print(f'{image.shape}')
-
-    #this will display the image using the photo editing application
     display_image(image)
 
 # this function is to calculate aspect ratio
