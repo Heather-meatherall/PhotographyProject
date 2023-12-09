@@ -151,10 +151,10 @@ def display_image(np_image):
         # convert the image to grayscale
         if event == 'Greyscale':
             # convert to greyscale
-            gray_image = greyscale(np_image)
+            np_image = greyscale(np_image)
 
             # convert numpy array to data
-            gray_image_data = np_im_to_data(gray_image)
+            gray_image_data = np_im_to_data(np_image)
             
             # thi displays the greyscale image
             window['-OUTPUT-'].draw_image(data=gray_image_data, location=(0, height))
@@ -162,23 +162,23 @@ def display_image(np_image):
         # Histogram equalization
         if event == 'Histogram Equalization':
             # this performs histogram equalization
-            rgb_image = histogram_equalization(np_image)
+            np_image = histogram_equalization(np_image)
             
             # convert numpy array to data
-            rgb_image_data = np_im_to_data(rgb_image)
+            rgb_image_data = np_im_to_data(np_image)
 
             # this displays the equalized image
             window['-OUTPUT-'].draw_image(data=rgb_image_data, location=(0, height))
 
         #  filter to apply the blur 
         if event == 'Blur':
-            blurred_image = apply_blur(np_image)
-            window['-OUTPUT-'].draw_image(data=np_im_to_data(blurred_image), location=(0, height))
+            np_image = apply_blur(np_image)
+            window['-OUTPUT-'].draw_image(data=np_im_to_data(np_image), location=(0, height))
 
         # applying of the sharpness filter
         if event == 'Sharpness':
-            sharpened_image = apply_sharpness(np_image)
-            window['-OUTPUT-'].draw_image(data=np_im_to_data(sharpened_image), location=(0, height))
+            np_image = apply_sharpness(np_image)
+            window['-OUTPUT-'].draw_image(data=np_im_to_data(np_image), location=(0, height))
 
         # these are the adjustments using sliders
         if event == '-H-':
@@ -266,7 +266,53 @@ def histogram_equalization(image):
 
 # a function to apply blur filter
 def apply_blur(image):
-    return cv2.GaussianBlur(image, (15, 15), 0)
+    return custom_gaussian_blur(image)
+
+# this is your custom Gaussian blur implementation
+def custom_gaussian_blur(image):
+    # Define the size of the kernel (standard deviation)
+    kernel_size = 15
+    kernel_size_half = kernel_size // 2
+
+    # Generate the Gaussian kernel
+    kernel = np.fromfunction(
+        lambda x, y: (1/ (2 * np.pi * (kernel_size / 2)**2)) * 
+                     np.exp(-((x - kernel_size_half)**2 + (y - kernel_size_half)**2) / (2 * (kernel_size / 2)**2)),
+        (kernel_size, kernel_size)
+    )
+
+    # Normalize the kernel
+    kernel = kernel / np.sum(kernel)
+
+    # Apply the convolution to each channel separately
+    output_image = np.zeros_like(image)
+    for channel in range(image.shape[2]):
+        filtered_channel = apply_filter_to_image(image[:, :, channel], kernel)
+
+        # Pad the filtered channel to match the output image dimensions
+        pad_height = (output_image.shape[0] - filtered_channel.shape[0]) // 2
+        pad_width = (output_image.shape[1] - filtered_channel.shape[1]) // 2
+        padded_filtered_channel = np.pad(filtered_channel, ((pad_height, pad_height), (pad_width, pad_width)), mode='constant')
+
+        output_image[:, :, channel] = padded_filtered_channel
+
+    return output_image.astype(np.uint8)
+
+# this function to apply a filter to a patch in the image
+def apply_filter_to_patch(patch, filter):
+    return np.sum(patch * filter)
+
+# this function will apply a filter to the entire image (custom implementation)
+def apply_filter_to_image(image, filter):
+    h, w = image.shape
+    h_filter, w_filter = filter.shape
+    result = np.zeros((h - h_filter + 1, w - w_filter + 1))
+    for i in range(h - h_filter + 1):
+        for j in range(w - w_filter + 1):
+            patch = image[i:i + h_filter, j:j + w_filter]
+            result[i, j] = apply_filter_to_patch(patch, filter)
+    return result
+
 
 # a function to apply sharpness filter
 def apply_sharpness(image):
@@ -294,3 +340,4 @@ def reset_image(image, c, original):
 
 if __name__ == '__main__':
     main()
+
