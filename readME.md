@@ -15,9 +15,6 @@ To save your image, first hit the "Save" button. A pop up window will be display
 enter the location in the text box or select it using the "Save As" button. From there, hit "okay" to the image
 or "Cancel" to return to editing.
 
-## Video Demo
-
-
 ## Group Members 
 * Heather Meatherall
 * Emma Zhu
