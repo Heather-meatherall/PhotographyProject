@@ -1,4 +1,4 @@
-# Photo Ediitng Project
+# Photo Editing Project
 ## Project Description
 The following project is a photo editing application. It allows the user to edit their image using pre-built filters, as well as adjust the HSV values uses sliders. The edits made can be reset at any time using buttons, and the final image can be saved. 
 
